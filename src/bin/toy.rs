@@ -32,23 +32,6 @@ fn run_fun<I>(jit: &mut jit::JIT, code: &str, input: I) -> Result<i64, String> {
     unsafe { run_code(jit, code, input) }
 }
 
-fn run_foo(jit: &mut jit::JIT) -> Result<isize, String> {
-    unsafe { run_code(jit, FOO_CODE, (1, 0)) }
-}
-
-fn run_recursive_fib_code(jit: &mut jit::JIT, input: isize) -> Result<isize, String> {
-    unsafe { run_code(jit, RECURSIVE_FIB_CODE, input) }
-}
-
-fn run_iterative_fib_code(jit: &mut jit::JIT, input: isize) -> Result<isize, String> {
-    unsafe { run_code(jit, ITERATIVE_FIB_CODE, input) }
-}
-
-fn run_hello(jit: &mut jit::JIT) -> Result<i64, String> {
-    jit.create_data("hello_world", "Hello, World!\0".as_bytes().to_vec())?;
-    run_fun(jit, HELLO, ())
-}
-
 /// Executes the given code using the cranelift JIT compiler.
 ///
 /// Feeds the given input into the JIT compiled function and returns the resulting output.
@@ -68,69 +51,20 @@ unsafe fn run_code<I, O>(jit: &mut jit::JIT, code: &str, input: I) -> Result<O, 
     Ok(code_fn(input))
 }
 
-// A small test function.
-//
-// The `(c)` declares a return variable; the function returns whatever value
-// it was assigned when the function exits. Note that there are multiple
-// assignments, so the input is not in SSA form, but that's ok because
-// Cranelift handles all the details of translating into SSA form itself.
-const FOO_CODE: &str = r#"
-    fn foo(a, b) -> (c) {
-        c = if a {
-            if b {
-                30
-            } else {
-                40
-            }
-        } else {
-            50
-        }
-        c = c + 2
-    }
-"#;
-
-/// Another example: Recursive fibonacci.
-const RECURSIVE_FIB_CODE: &str = r#"
-    fn recursive_fib(n) -> (r) {
-        r = if n == 0 {
-                    0
-            } else {
-                if n == 1 {
-                    1
-                } else {
-                    recursive_fib(n - 1) + recursive_fib(n - 2)
-                }
-            }
-    }
-"#;
-
-/// Another example: Iterative fibonacci.
-const ITERATIVE_FIB_CODE: &str = r#"
-    fn iterative_fib(n) -> (r) {
-        if n == 0 {
-            r = 0
-        } else {
-            n = n - 1
-            a = 0
-            r = 1
-            while n != 0 {
-                t = r
-                r = r + a
-                a = t
-                n = n - 1
-            }
-        }
-    }
-"#;
-
 /// Let's say hello, by calling into libc. The puts function is resolved by
 /// dlsym to the libc function, and the string &hello_string is defined below.
+#[allow(dead_code)]
 const HELLO: &str = r#"
 fn hello() -> (r) {
     puts(&hello_world)
 }
 "#;
 
+/// The `(s)` declares a return variable; the function returns whatever value
+/// it was assigned when the function exits. Note that there are multiple
+/// assignments, so the input is not in SSA form, but that's ok because
+/// Cranelift handles all the details of translating into SSA form itself.
+#[allow(dead_code)]
 const SUM: &str = r#"
 fn sum(n) -> (s) {
     s = 0
@@ -145,6 +79,11 @@ fn sum(n) -> (s) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn run_hello(jit: &mut jit::JIT) -> Result<i64, String> {
+        jit.create_data("hello_world", "Hello, World!\0".as_bytes().to_vec())?;
+        run_fun(jit, HELLO, ())
+    }
 
     #[test]
     fn hello() {
