@@ -1,20 +1,35 @@
 use core::mem;
 use cranelift_jit_demo::jit;
+use std::env;
+use std::fs;
 
 fn main() -> Result<(), String> {
+    let args: Vec<String> = env::args().collect();
+    assert!(args.len() > 1);
+
+    let src = fs::read_to_string(&args[1]).expect("failed to read from file");
+
+    let mut inputs: Vec<i64> = vec![];
+    for input in &args[2..] {
+        inputs.push(input.parse().unwrap());
+    }
+
     // Create the JIT instance, which manages all generated functions and data.
     let mut jit = jit::JIT::default();
-    println!("the answer is: {}", run_foo(&mut jit)?);
-    println!(
-        "recursive_fib(10) = {}",
-        run_recursive_fib_code(&mut jit, 10)?
-    );
-    println!(
-        "iterative_fib(10) = {}",
-        run_iterative_fib_code(&mut jit, 10)?
-    );
-    run_hello(&mut jit)?;
+
+    match inputs.len() {
+        0 => println!("{}", run_fun(&mut jit, &src, ())?),
+        1 => println!("{}", run_fun(&mut jit, &src, inputs[0])?),
+        2 => println!("{}", run_fun(&mut jit, &src, (inputs[0], inputs[1]))?),
+        3 => println!("{}", run_fun(&mut jit, &src, (inputs[0], inputs[1], inputs[2]))?),
+        _ => unimplemented!("four or more arguments"),
+    }
+
     Ok(())
+}
+
+fn run_fun<I>(jit: &mut jit::JIT, code: &str, input: I) -> Result<i64, String> {
+    unsafe { run_code(jit, code, input) }
 }
 
 fn run_foo(jit: &mut jit::JIT) -> Result<isize, String> {
