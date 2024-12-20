@@ -44,9 +44,9 @@ fn run_iterative_fib_code(jit: &mut jit::JIT, input: isize) -> Result<isize, Str
     unsafe { run_code(jit, ITERATIVE_FIB_CODE, input) }
 }
 
-fn run_hello(jit: &mut jit::JIT) -> Result<isize, String> {
-    jit.create_data("hello_string", "hello world!\0".as_bytes().to_vec())?;
-    unsafe { run_code(jit, HELLO_CODE, ()) }
+fn run_hello(jit: &mut jit::JIT) -> Result<i64, String> {
+    jit.create_data("hello_world", "Hello, World!\0".as_bytes().to_vec())?;
+    run_fun(jit, HELLO, ())
 }
 
 /// Executes the given code using the cranelift JIT compiler.
@@ -125,8 +125,38 @@ const ITERATIVE_FIB_CODE: &str = r#"
 
 /// Let's say hello, by calling into libc. The puts function is resolved by
 /// dlsym to the libc function, and the string &hello_string is defined below.
-const HELLO_CODE: &str = r#"
+const HELLO: &str = r#"
 fn hello() -> (r) {
-    puts(&hello_string)
+    puts(&hello_world)
 }
 "#;
+
+const SUM: &str = r#"
+fn sum(n) -> (s) {
+    s = 0
+    i = 1
+    while i <= n {
+        s = s + i
+        i = i + 1
+    }
+}
+"#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hello() {
+        let mut jit = jit::JIT::default();
+        assert_eq!(run_hello(&mut jit), Ok(0));
+    }
+
+    #[test]
+    fn sum() {
+        for i in 1..=10 {
+            let mut jit = jit::JIT::default();
+            assert_eq!(run_fun(&mut jit, SUM, i), Ok(i * (i + 1) / 2));
+        }
+    }
+}
