@@ -57,6 +57,8 @@ impl JIT {
         // Then, translate the AST nodes into Cranelift IR.
         self.translate(params, the_return, stmts)?;
 
+        println!("{}", self.ctx.func);
+
         // Next, declare the function to jit. Functions must be declared
         // before they can be called, or defined.
         //
