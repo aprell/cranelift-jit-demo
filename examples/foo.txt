@@ -1,0 +1,12 @@
+fn foo(a, b) -> (c) {
+    if a {
+        if b {
+            c = 30
+        } else {
+            c = 40
+        }
+    } else {
+        c = 50
+    }
+    c = c + 2
+}

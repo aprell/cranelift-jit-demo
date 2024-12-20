@@ -1,0 +1,16 @@
+fn fib(n) -> (r) {
+    t0 = 0
+    t1 = 1
+    if n < 2 {
+        r = n
+    } else {
+        i = 2
+        while i <= n {
+            t2 = t0 + t1
+            t0 = t1
+            t1 = t2
+            i = i + 1
+        }
+        r = t1
+    }
+}
