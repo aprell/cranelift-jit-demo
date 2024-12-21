@@ -52,7 +52,7 @@ unsafe fn compile_code<I, O>(jit: &mut jit::JIT, code: &str) -> Result<fn(I) -> 
     // Cast the raw pointer to a typed function pointer. This is unsafe, because
     // this is the critical point where you have to trust that the generated code
     // is safe to be called.
-    let code_fn = mem::transmute::<_, fn(I) -> O>(code_ptr);
+    let code_fn = mem::transmute::<*const u8, fn(I) -> O>(code_ptr);
     Ok(code_fn)
 }
 
