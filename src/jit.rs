@@ -192,7 +192,7 @@ struct FunctionTranslator<'a> {
     module: &'a mut JITModule,
 }
 
-impl<'a> FunctionTranslator<'a> {
+impl FunctionTranslator<'_> {
     /// When you write out instructions in Cranelift, you get back `Value`s. You
     /// can then use these references in other instructions.
     fn translate_expr(&mut self, expr: Expr) -> Value {
