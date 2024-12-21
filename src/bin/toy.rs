@@ -1,7 +1,6 @@
 use core::mem;
 use cranelift_jit_demo::jit;
-use std::env;
-use std::fs;
+use std::{env, fs};
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
@@ -32,7 +31,7 @@ fn run_fun<I>(jit: &mut jit::JIT, code: &str, input: I) -> Result<i64, String> {
     unsafe { run_code(jit, code, input) }
 }
 
-/// Executes the given code using the cranelift JIT compiler.
+/// Executes the given code using the Cranelift JIT compiler.
 ///
 /// Feeds the given input into the JIT compiled function and returns the resulting output.
 ///
@@ -41,14 +40,20 @@ fn run_fun<I>(jit: &mut jit::JIT, code: &str, input: I) -> Result<i64, String> {
 /// This function is unsafe since it relies on the caller to provide it with the correct
 /// input and output types. Using incorrect types at this point may corrupt the program's state.
 unsafe fn run_code<I, O>(jit: &mut jit::JIT, code: &str, input: I) -> Result<O, String> {
+    // JIT-compile function
+    let code_fn = compile_code(jit, code)?;
+    // And now we can call it!
+    Ok(code_fn(input))
+}
+
+unsafe fn compile_code<I, O>(jit: &mut jit::JIT, code: &str) -> Result<fn(I) -> O, String> {
     // Pass the string to the JIT, and it returns a raw pointer to machine code.
     let code_ptr = jit.compile(code)?;
     // Cast the raw pointer to a typed function pointer. This is unsafe, because
     // this is the critical point where you have to trust that the generated code
     // is safe to be called.
     let code_fn = mem::transmute::<_, fn(I) -> O>(code_ptr);
-    // And now we can call it!
-    Ok(code_fn(input))
+    Ok(code_fn)
 }
 
 /// Let's say hello, by calling into libc. The puts function is resolved by
@@ -93,9 +98,10 @@ mod tests {
 
     #[test]
     fn sum() {
+        let mut jit = jit::JIT::default();
+        let f = unsafe { compile_code::<i64, i64>(&mut jit, SUM) }.unwrap();
         for i in 1..=10 {
-            let mut jit = jit::JIT::default();
-            assert_eq!(run_fun(&mut jit, SUM, i), Ok(i * (i + 1) / 2));
+            assert_eq!(f(i), i * (i + 1) / 2);
         }
     }
 }
